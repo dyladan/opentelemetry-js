@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Tracer | OpenTelemetry Documentation</title>
+	<title>Tracer | OpenTelemetry API for JavaScript</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">OpenTelemetry Documentation</a>
+					<a href="../index.html" class="title">OpenTelemetry API for JavaScript</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -114,7 +114,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dyladan/opentelemetry-js/blob/a0bd6bb/packages/opentelemetry-types/src/trace/tracer.ts#L66">trace/tracer.ts:66</a></li>
+									<li>Defined in <a href="https://github.com/dynatrace-oss-contrib/opentelemetry-js/blob/7e31b39/packages/opentelemetry-types/src/trace/tracer.ts#L66">trace/tracer.ts:66</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -154,7 +154,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dyladan/opentelemetry-js/blob/a0bd6bb/packages/opentelemetry-types/src/trace/tracer.ts#L77">trace/tracer.ts:77</a></li>
+									<li>Defined in <a href="https://github.com/dynatrace-oss-contrib/opentelemetry-js/blob/7e31b39/packages/opentelemetry-types/src/trace/tracer.ts#L79">trace/tracer.ts:79</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -163,11 +163,12 @@
 									Spans.</p>
 								</div>
 								<p>If no tracer implementation is provided, this defaults to the W3C Trace
-									Context binary format (<a href="binaryformat.html">BinaryFormat</a>). For more details see
+									Context binary format <a href="binaryformat.html">BinaryFormat</a>. For more details see
 									<a href="https://w3c.github.io/trace-context-binary/">W3C Trace Context
 								binary protocol</a>.</p>
 							</div>
 							<h4 class="tsd-returns-title">Returns <a href="binaryformat.html" class="tsd-signature-type">BinaryFormat</a></h4>
+							<p>the <a href="binaryformat.html">BinaryFormat</a> for this implementation.</p>
 						</li>
 					</ul>
 				</section>
@@ -175,13 +176,13 @@
 					<a name="getcurrentspan" class="tsd-anchor"></a>
 					<h3>get<wbr>Current<wbr>Span</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Current<wbr>Span<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="span.html" class="tsd-signature-type">Span</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></li>
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Current<wbr>Span<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="span.html" class="tsd-signature-type">Span</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dyladan/opentelemetry-js/blob/a0bd6bb/packages/opentelemetry-types/src/trace/tracer.ts#L37">trace/tracer.ts:37</a></li>
+									<li>Defined in <a href="https://github.com/dynatrace-oss-contrib/opentelemetry-js/blob/7e31b39/packages/opentelemetry-types/src/trace/tracer.ts#L37">trace/tracer.ts:37</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -192,7 +193,7 @@
 							</div>
 							<h4 class="tsd-returns-title">Returns <a href="span.html" class="tsd-signature-type">Span</a>
 								<span class="tsd-signature-symbol"> | </span>
-								<span class="tsd-signature-type">null</span>
+								<span class="tsd-signature-type">undefined</span>
 							</h4>
 							<p>Span The currently active Span</p>
 						</li>
@@ -208,7 +209,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dyladan/opentelemetry-js/blob/a0bd6bb/packages/opentelemetry-types/src/trace/tracer.ts#L87">trace/tracer.ts:87</a></li>
+									<li>Defined in <a href="https://github.com/dynatrace-oss-contrib/opentelemetry-js/blob/7e31b39/packages/opentelemetry-types/src/trace/tracer.ts#L91">trace/tracer.ts:91</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -217,10 +218,11 @@
 									Spans.</p>
 								</div>
 								<p>If no tracer implementation is provided, this defaults to the W3C Trace
-									Context HTTP text format ({@link HttpTraceContext}). For more details see
+									Context HTTP text format <a href="httptextformat.html">HttpTextFormat</a>. For more details see
 								<a href="https://w3c.github.io/trace-context/">W3C Trace Context</a>.</p>
 							</div>
 							<h4 class="tsd-returns-title">Returns <a href="httptextformat.html" class="tsd-signature-type">HttpTextFormat</a></h4>
+							<p>the <a href="httptextformat.html">HttpTextFormat</a> for this implementation.</p>
 						</li>
 					</ul>
 				</section>
@@ -234,7 +236,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dyladan/opentelemetry-js/blob/a0bd6bb/packages/opentelemetry-types/src/trace/tracer.ts#L45">trace/tracer.ts:45</a></li>
+									<li>Defined in <a href="https://github.com/dynatrace-oss-contrib/opentelemetry-js/blob/7e31b39/packages/opentelemetry-types/src/trace/tracer.ts#L45">trace/tracer.ts:45</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -269,7 +271,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dyladan/opentelemetry-js/blob/a0bd6bb/packages/opentelemetry-types/src/trace/tracer.ts#L55">trace/tracer.ts:55</a></li>
+									<li>Defined in <a href="https://github.com/dynatrace-oss-contrib/opentelemetry-js/blob/7e31b39/packages/opentelemetry-types/src/trace/tracer.ts#L55">trace/tracer.ts:55</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -331,6 +333,9 @@
 					<li class=" tsd-kind-enum">
 						<a href="../enums/traceflags.html" class="tsd-kind-icon">Trace<wbr>Flags</a>
 					</li>
+					<li class=" tsd-kind-enum">
+						<a href="../enums/valuetype.html" class="tsd-kind-icon">Value<wbr>Type</a>
+					</li>
 					<li class=" tsd-kind-interface">
 						<a href="attributes.html" class="tsd-kind-icon">Attributes</a>
 					</li>
@@ -356,6 +361,9 @@
 						<a href="httptextformat.html" class="tsd-kind-icon">Http<wbr>Text<wbr>Format</a>
 					</li>
 					<li class=" tsd-kind-interface">
+						<a href="labelset.html" class="tsd-kind-icon">Label<wbr>Set</a>
+					</li>
+					<li class=" tsd-kind-interface">
 						<a href="link.html" class="tsd-kind-icon">Link</a>
 					</li>
 					<li class=" tsd-kind-interface">
@@ -372,6 +380,9 @@
 					</li>
 					<li class=" tsd-kind-interface">
 						<a href="metricoptions.html" class="tsd-kind-icon">Metric<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="metricutils.html" class="tsd-kind-icon">Metric<wbr>Utils</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-has-type-parameter">
 						<a href="plugin.html" class="tsd-kind-icon">Plugin</a>
@@ -435,6 +446,9 @@
 				<ul class="after-current">
 					<li class=" tsd-kind-type-alias">
 						<a href="../globals.html#hrtime" class="tsd-kind-icon">Hr<wbr>Time</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="../globals.html#labels" class="tsd-kind-icon">Labels</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="../globals.html#logfunction" class="tsd-kind-icon">Log<wbr>Function</a>
