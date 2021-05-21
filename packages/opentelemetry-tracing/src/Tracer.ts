@@ -181,8 +181,8 @@ export class Tracer implements api.Tracer {
   ): ReturnType<F>;
   startActiveSpan<F extends (span: api.Span) => ReturnType<F>>(
     name: string,
-    options: api.SpanOptions,
-    context: api.Context,
+    options?: api.SpanOptions,
+    context?: api.Context,
     fn: F
   ): ReturnType<F> {
     const parentContext = context ?? api.context.active();
