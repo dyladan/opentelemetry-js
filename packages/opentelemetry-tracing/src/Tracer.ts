@@ -176,7 +176,7 @@ export class Tracer implements api.Tracer {
   ): ReturnType<F>;
   startActiveSpan<F extends (span: api.Span) => ReturnType<F>>(
     name: string,
-    options: api.SpanOptions,
+    options?: api.SpanOptions,
     fn: F
   ): ReturnType<F>;
   startActiveSpan<F extends (span: api.Span) => ReturnType<F>>(
