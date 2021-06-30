@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { Span } from '@opentelemetry/types';
+import { Context } from '@opentelemetry/api';
+import { globalErrorHandler } from '@opentelemetry/core';
+import { ReadableSpan } from './export/ReadableSpan';
+import { Span } from './Span';
 import { SpanProcessor } from './SpanProcessor';
 
 /**
@@ -24,21 +27,48 @@ import { SpanProcessor } from './SpanProcessor';
 export class MultiSpanProcessor implements SpanProcessor {
   constructor(private readonly _spanProcessors: SpanProcessor[]) {}
 
-  onStart(span: Span): void {
+  forceFlush(): Promise<void> {
+    const promises: Promise<void>[] = [];
+
     for (const spanProcessor of this._spanProcessors) {
-      spanProcessor.onStart(span);
+      promises.push(spanProcessor.forceFlush());
+    }
+    return new Promise(resolve => {
+      Promise.all(promises)
+        .then(() => {
+          resolve();
+        })
+        .catch(error => {
+          globalErrorHandler(
+            error || new Error('MultiSpanProcessor: forceFlush failed')
+          );
+          resolve();
+        });
+    });
+  }
+
+  onStart(span: Span, context: Context): void {
+    for (const spanProcessor of this._spanProcessors) {
+      spanProcessor.onStart(span, context);
     }
   }
 
-  onEnd(span: Span): void {
+  onEnd(span: ReadableSpan): void {
     for (const spanProcessor of this._spanProcessors) {
       spanProcessor.onEnd(span);
     }
   }
 
-  shutdown(): void {
+  shutdown(): Promise<void> {
+    const promises: Promise<void>[] = [];
+
     for (const spanProcessor of this._spanProcessors) {
-      spanProcessor.shutdown();
+      promises.push(spanProcessor.shutdown());
     }
+    return new Promise((resolve, reject) => {
+      Promise.all(promises).then(() => {
+        resolve();
+      }, reject);
+    });
   }
 }

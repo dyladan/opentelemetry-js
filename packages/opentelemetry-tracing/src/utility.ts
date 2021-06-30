@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-import { BasicTracerConfig } from './types';
-import {
-  DEFAULT_MAX_ATTRIBUTES_PER_SPAN,
-  DEFAULT_MAX_EVENTS_PER_SPAN,
-  DEFAULT_MAX_LINKS_PER_SPAN,
-} from './config';
-import { DEFAULT_CONFIG } from './config';
+import { buildSamplerFromEnv, DEFAULT_CONFIG } from './config';
+import { TracerConfig } from './types';
 
 /**
  * Function to merge Default configuration (as specified in './config') with
  * user provided configurations.
  */
-export function mergeConfig(userConfig: BasicTracerConfig) {
-  const traceParams = userConfig.traceParams;
-  const target = Object.assign({}, DEFAULT_CONFIG, userConfig);
+export function mergeConfig(userConfig: TracerConfig) {
+  const perInstanceDefaults: Partial<TracerConfig> = {
+    sampler: buildSamplerFromEnv(),
+  };
 
-  // the user-provided value will be used to extend the default value.
-  if (traceParams) {
-    target.traceParams.numberOfAttributesPerSpan =
-      traceParams.numberOfAttributesPerSpan || DEFAULT_MAX_ATTRIBUTES_PER_SPAN;
-    target.traceParams.numberOfEventsPerSpan =
-      traceParams.numberOfEventsPerSpan || DEFAULT_MAX_EVENTS_PER_SPAN;
-    target.traceParams.numberOfLinksPerSpan =
-      traceParams.numberOfLinksPerSpan || DEFAULT_MAX_LINKS_PER_SPAN;
-  }
+  const target = Object.assign(
+    {},
+    DEFAULT_CONFIG,
+    perInstanceDefaults,
+    userConfig
+  );
+
+  target.spanLimits = Object.assign(
+    {},
+    DEFAULT_CONFIG.spanLimits,
+    userConfig.spanLimits || {}
+  );
+
   return target;
 }

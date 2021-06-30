@@ -1,12 +1,15 @@
 'use strict';
 
 const benchmark = require('./benchmark');
-const opentelemetry = require('@opentelemetry/core');
+const opentelemetry = require('../packages/opentelemetry-core');
+const api = require('../packages/opentelemetry-api');
+const { Context } = require('../packages/opentelemetry-context-base');
+const { B3Propagator } = require('../packages/opentelemetry-propagator-b3');
 
 const setups = [
   {
-    name: 'B3Format',
-    propagator: new opentelemetry.B3Format(),
+    name: 'B3Propagator',
+    propagator: new B3Propagator(),
     injectCarrier: {},
     extractCarrier: {
       'x-b3-traceid': 'd4cda95b652f4a1592b449d5929fda1b',
@@ -14,8 +17,8 @@ const setups = [
     }
   },
   {
-    name: 'HttpTraceContext',
-    propagator: new opentelemetry.HttpTraceContext(),
+    name: 'HttpTraceContextPropagator',
+    propagator: new opentelemetry.HttpTraceContextPropagator(),
     injectCarrier: {},
     extractCarrier: {
       traceparent: '00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-00'
@@ -26,15 +29,16 @@ const setups = [
 for (const setup of setups) {
   console.log(`Beginning ${setup.name} Benchmark...`);
   const propagator = setup.propagator;
-  const suite = benchmark()
+  const suite = benchmark(100)
     .add('#Inject', function () {
-      propagator.inject({
-        traceId: 'd4cda95b652f4a1592b449d5929fda1b',
-        spanId: '6e0c63257de34c92'
-      }, setup.name, setup.injectCarrier);
+      propagator.inject(
+        api.setExtractedSpanContext(Context.ROOT_CONTEXT, {
+          traceId: 'd4cda95b652f4a1592b449d5929fda1b',
+          spanId: '6e0c63257de34c92'
+        }), setup.injectCarrier, api.defaultTextMapSetter);
     })
     .add('#Extract', function () {
-      propagator.extract(setup.name, setup.extractCarrier);
+      propagator.extract(Context.ROOT_CONTEXT, setup.extractCarrier, api.defaultTextMapGetter);
     });
 
   // run async

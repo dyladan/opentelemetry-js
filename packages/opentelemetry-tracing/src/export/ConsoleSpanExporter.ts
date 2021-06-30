@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,18 @@
 
 import { SpanExporter } from './SpanExporter';
 import { ReadableSpan } from './ReadableSpan';
-import { ExportResult } from '@opentelemetry/base';
-import { hrTimeToMicroseconds } from '@opentelemetry/core';
+import {
+  ExportResult,
+  ExportResultCode,
+  hrTimeToMicroseconds,
+} from '@opentelemetry/core';
 
 /**
  * This is implementation of {@link SpanExporter} that prints spans to the
  * console. This class can be used for diagnostic purposes.
  */
+
+/* eslint-disable no-console */
 export class ConsoleSpanExporter implements SpanExporter {
   /**
    * Export spans.
@@ -39,8 +44,9 @@ export class ConsoleSpanExporter implements SpanExporter {
   /**
    * Shutdown the exporter.
    */
-  shutdown(): void {
-    return this._sendSpans([]);
+  shutdown(): Promise<void> {
+    this._sendSpans([]);
+    return Promise.resolve();
   }
 
   /**
@@ -49,10 +55,10 @@ export class ConsoleSpanExporter implements SpanExporter {
    */
   private _exportInfo(span: ReadableSpan) {
     return {
-      traceId: span.spanContext.traceId,
+      traceId: span.spanContext().traceId,
       parentId: span.parentSpanId,
       name: span.name,
-      id: span.spanContext.spanId,
+      id: span.spanContext().spanId,
       kind: span.kind,
       timestamp: hrTimeToMicroseconds(span.startTime),
       duration: hrTimeToMicroseconds(span.duration),
@@ -75,7 +81,7 @@ export class ConsoleSpanExporter implements SpanExporter {
       console.log(this._exportInfo(span));
     }
     if (done) {
-      return done(ExportResult.SUCCESS);
+      return done({ code: ExportResultCode.SUCCESS });
     }
   }
 }

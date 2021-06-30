@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,29 @@
 
 import {
   SpanKind,
-  Status,
-  Attributes,
+  SpanStatus,
+  SpanAttributes,
   HrTime,
   Link,
   SpanContext,
-  TimedEvent,
-} from '@opentelemetry/types';
+} from '@opentelemetry/api';
+import { Resource } from '@opentelemetry/resources';
+import { InstrumentationLibrary } from '@opentelemetry/core';
+import { TimedEvent } from '../TimedEvent';
 
 export interface ReadableSpan {
   readonly name: string;
   readonly kind: SpanKind;
-  readonly spanContext: SpanContext;
+  readonly spanContext: () => SpanContext;
   readonly parentSpanId?: string;
   readonly startTime: HrTime;
   readonly endTime: HrTime;
-  readonly status: Status;
-  readonly attributes: Attributes;
+  readonly status: SpanStatus;
+  readonly attributes: SpanAttributes;
   readonly links: Link[];
   readonly events: TimedEvent[];
   readonly duration: HrTime;
+  readonly ended: boolean;
+  readonly resource: Resource;
+  readonly instrumentationLibrary: InstrumentationLibrary;
 }

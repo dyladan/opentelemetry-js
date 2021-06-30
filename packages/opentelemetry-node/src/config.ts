@@ -1,5 +1,5 @@
-/**
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,9 @@
  * limitations under the License.
  */
 
-import { Plugins } from './instrumentation/PluginLoader';
-import { BasicTracerConfig } from '@opentelemetry/tracing';
+import { TracerConfig } from '@opentelemetry/tracing';
 
 /**
  * NodeTracerConfig provides an interface for configuring a Node Tracer.
  */
-export interface NodeTracerConfig extends BasicTracerConfig {
-  /** Plugins options. */
-  plugins?: Plugins;
-}
-
-/** List of all default supported plugins */
-export const DEFAULT_INSTRUMENTATION_PLUGINS: Plugins = {
-  http: {
-    enabled: true,
-    path: '@opentelemetry/plugin-http',
-  },
-  grpc: {
-    enabled: true,
-    path: '@opentelemetry/plugin-grpc',
-  },
-  https: {
-    enabled: true,
-    path: '@opentelemetry/plugin-https',
-  },
-};
+export type NodeTracerConfig = TracerConfig;

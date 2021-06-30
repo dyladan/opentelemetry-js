@@ -1,18 +1,19 @@
 {
   "name": "@opentelemetry/shim-opentracing",
-  "version": "0.1.1",
+  "version": "0.22.0",
   "description": "OpenTracing to OpenTelemetry shim",
+  "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js",
   "scripts": {
-    "test": "nyc ts-mocha -p tsconfig.json test/**/*.ts",
-    "tdd": "yarn test -- --watch-extensions ts --watch",
+    "compile": "tsc --build",
+    "clean": "tsc --build --clean",
+    "test": "nyc ts-mocha -p tsconfig.json test/**/*.test.ts",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
-    "clean": "rimraf build/*",
-    "check": "gts check",
-    "compile": "tsc -p .",
-    "fix": "gts fix",
-    "prepare": "npm run compile"
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "version": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "opentelemetry",
@@ -23,10 +24,11 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=8.5.0"
   },
   "files": [
     "build/src/**/*.js",
+    "build/src/**/*.js.map",
     "build/src/**/*.d.ts",
     "doc",
     "LICENSE",
@@ -36,23 +38,26 @@
     "access": "public"
   },
   "devDependencies": {
-    "@types/mocha": "^5.2.7",
-    "@types/node": "^12.6.9",
-    "@opentelemetry/tracing": "^0.1.1",
-    "codecov": "^3.5.0",
-    "gts": "^1.1.0",
-    "mocha": "^6.2.0",
-    "nyc": "^14.1.1",
-    "rimraf": "^3.0.0",
-    "ts-mocha": "^6.0.0",
-    "ts-node": "^8.3.0",
-    "typescript": "^3.6.3",
-    "tslint-microsoft-contrib": "^6.2.0",
-    "tslint-consistent-codestyle": "^1.15.1"
+    "@opentelemetry/api": "^1.0.1",
+    "@opentelemetry/tracing": "0.22.0",
+    "@opentelemetry/propagator-b3": "0.22.0",
+    "@opentelemetry/propagator-jaeger": "0.22.0",
+    "@types/mocha": "8.2.2",
+    "@types/node": "14.17.4",
+    "codecov": "3.8.2",
+    "mocha": "7.2.0",
+    "nyc": "15.1.0",
+    "rimraf": "3.0.2",
+    "ts-mocha": "8.0.0",
+    "ts-node": "9.1.1",
+    "typescript": "4.3.4"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.0.1"
   },
   "dependencies": {
-    "@opentelemetry/types": "^0.1.1",
-    "@opentelemetry/core": "^0.1.1",
+    "@opentelemetry/core": "0.22.0",
+    "@opentelemetry/semantic-conventions": "0.22.0",
     "opentracing": "^0.14.4"
   }
 }

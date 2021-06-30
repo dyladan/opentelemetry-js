@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,91 +14,105 @@
  * limitations under the License.
  */
 
-import * as types from '@opentelemetry/types';
+import * as api from '@opentelemetry/api';
 import {
+  isAttributeValue,
   hrTime,
   hrTimeDuration,
+  InstrumentationLibrary,
   isTimeInput,
   timeInputToHrTime,
 } from '@opentelemetry/core';
+import { Resource } from '@opentelemetry/resources';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { ReadableSpan } from './export/ReadableSpan';
-import { BasicTracer } from './BasicTracer';
+import { TimedEvent } from './TimedEvent';
+import { Tracer } from './Tracer';
 import { SpanProcessor } from './SpanProcessor';
-import { TraceParams } from './types';
+import { SpanLimits } from './types';
+import { SpanAttributeValue, Context } from '@opentelemetry/api';
+import { ExceptionEventName } from './enums';
 
 /**
  * This class represents a span.
  */
-export class Span implements types.Span, ReadableSpan {
+export class Span implements api.Span, ReadableSpan {
   // Below properties are included to implement ReadableSpan for export
   // purposes but are not intended to be written-to directly.
-  readonly spanContext: types.SpanContext;
-  readonly kind: types.SpanKind;
+  private readonly _spanContext: api.SpanContext;
+  readonly kind: api.SpanKind;
   readonly parentSpanId?: string;
-  readonly attributes: types.Attributes = {};
-  readonly links: types.Link[] = [];
-  readonly events: types.TimedEvent[] = [];
-  readonly startTime: types.HrTime;
+  readonly attributes: api.SpanAttributes = {};
+  readonly links: api.Link[] = [];
+  readonly events: TimedEvent[] = [];
+  readonly startTime: api.HrTime;
+  readonly resource: Resource;
+  readonly instrumentationLibrary: InstrumentationLibrary;
   name: string;
-  status: types.Status = {
-    code: types.CanonicalCode.OK,
+  status: api.SpanStatus = {
+    code: api.SpanStatusCode.UNSET,
   };
-  endTime: types.HrTime = [0, 0];
+  endTime: api.HrTime = [0, 0];
   private _ended = false;
-  private _duration: types.HrTime = [-1, -1];
-  private readonly _logger: types.Logger;
+  private _duration: api.HrTime = [-1, -1];
   private readonly _spanProcessor: SpanProcessor;
-  private readonly _traceParams: TraceParams;
+  private readonly _spanLimits: SpanLimits;
 
   /** Constructs a new Span instance. */
   constructor(
-    parentTracer: BasicTracer,
+    parentTracer: Tracer,
+    context: Context,
     spanName: string,
-    spanContext: types.SpanContext,
-    kind: types.SpanKind,
+    spanContext: api.SpanContext,
+    kind: api.SpanKind,
     parentSpanId?: string,
-    links: types.Link[] = [],
-    startTime: types.TimeInput = hrTime()
+    links: api.Link[] = [],
+    startTime: api.TimeInput = hrTime()
   ) {
     this.name = spanName;
-    this.spanContext = spanContext;
+    this._spanContext = spanContext;
     this.parentSpanId = parentSpanId;
     this.kind = kind;
     this.links = links;
     this.startTime = timeInputToHrTime(startTime);
-    this._logger = parentTracer.logger;
-    this._traceParams = parentTracer.getActiveTraceParams();
-    this._spanProcessor = parentTracer.activeSpanProcessor;
-    this._spanProcessor.onStart(this);
+    this.resource = parentTracer.resource;
+    this.instrumentationLibrary = parentTracer.instrumentationLibrary;
+    this._spanLimits = parentTracer.getSpanLimits();
+    this._spanProcessor = parentTracer.getActiveSpanProcessor();
+    this._spanProcessor.onStart(this, context);
   }
 
-  context(): types.SpanContext {
-    return this.spanContext;
+  spanContext(): api.SpanContext {
+    return this._spanContext;
   }
 
+  setAttribute(key: string, value?: SpanAttributeValue): this;
   setAttribute(key: string, value: unknown): this {
-    if (this._isSpanEnded()) return this;
+    if (value == null || this._isSpanEnded()) return this;
+    if (key.length === 0) {
+      api.diag.warn(`Invalid attribute key: ${key}`);
+      return this;
+    }
+    if (!isAttributeValue(value)) {
+      api.diag.warn(`Invalid attribute value set for key: ${key}`);
+      return this;
+    }
 
     if (
       Object.keys(this.attributes).length >=
-      this._traceParams.numberOfAttributesPerSpan!
+        this._spanLimits.attributeCountLimit! &&
+      !Object.prototype.hasOwnProperty.call(this.attributes, key)
     ) {
-      const attributeKeyToDelete = Object.keys(this.attributes).shift();
-      if (attributeKeyToDelete) {
-        this._logger.warn(
-          `Dropping extra attributes : ${attributeKeyToDelete}`
-        );
-        delete this.attributes[attributeKeyToDelete];
-      }
+      return this;
     }
     this.attributes[key] = value;
     return this;
   }
 
-  setAttributes(attributes: types.Attributes): this {
-    Object.keys(attributes).forEach(key => {
-      this.setAttribute(key, attributes[key]);
-    });
+  setAttributes(attributes: api.SpanAttributes): this {
+    for (const [k, v] of Object.entries(attributes)) {
+      this.setAttribute(k, v);
+    }
     return this;
   }
 
@@ -111,17 +125,17 @@ export class Span implements types.Span, ReadableSpan {
    */
   addEvent(
     name: string,
-    attributesOrStartTime?: types.Attributes | types.TimeInput,
-    startTime?: types.TimeInput
+    attributesOrStartTime?: api.SpanAttributes | api.TimeInput,
+    startTime?: api.TimeInput
   ): this {
     if (this._isSpanEnded()) return this;
-    if (this.events.length >= this._traceParams.numberOfEventsPerSpan!) {
-      this._logger.warn('Dropping extra events.');
+    if (this.events.length >= this._spanLimits.eventCountLimit!) {
+      api.diag.warn('Dropping extra events.');
       this.events.shift();
     }
     if (isTimeInput(attributesOrStartTime)) {
       if (typeof startTime === 'undefined') {
-        startTime = attributesOrStartTime as types.TimeInput;
+        startTime = attributesOrStartTime as api.TimeInput;
       }
       attributesOrStartTime = undefined;
     }
@@ -130,13 +144,13 @@ export class Span implements types.Span, ReadableSpan {
     }
     this.events.push({
       name,
-      attributes: attributesOrStartTime as types.Attributes,
+      attributes: attributesOrStartTime as api.SpanAttributes,
       time: timeInputToHrTime(startTime),
     });
     return this;
   }
 
-  setStatus(status: types.Status): this {
+  setStatus(status: api.SpanStatus): this {
     if (this._isSpanEnded()) return this;
     this.status = status;
     return this;
@@ -148,9 +162,9 @@ export class Span implements types.Span, ReadableSpan {
     return this;
   }
 
-  end(endTime: types.TimeInput = hrTime()): void {
+  end(endTime: api.TimeInput = hrTime()): void {
     if (this._isSpanEnded()) {
-      this._logger.error('You can only call end() on a span once.');
+      api.diag.error('You can only call end() on a span once.');
       return;
     }
     this._ended = true;
@@ -158,7 +172,7 @@ export class Span implements types.Span, ReadableSpan {
 
     this._duration = hrTimeDuration(this.startTime, this.endTime);
     if (this._duration[0] < 0) {
-      this._logger.warn(
+      api.diag.warn(
         'Inconsistent start and end time, startTime > endTime',
         this.startTime,
         this.endTime
@@ -169,23 +183,54 @@ export class Span implements types.Span, ReadableSpan {
   }
 
   isRecording(): boolean {
-    return true;
+    return this._ended === false;
   }
 
-  toReadableSpan(): ReadableSpan {
-    return this;
+  recordException(exception: api.Exception, time: api.TimeInput = hrTime()) {
+    const attributes: api.SpanAttributes = {};
+    if (typeof exception === 'string') {
+      attributes[SemanticAttributes.EXCEPTION_MESSAGE] = exception;
+    } else if (exception) {
+      if (exception.code) {
+        attributes[
+          SemanticAttributes.EXCEPTION_TYPE
+        ] = exception.code.toString();
+      } else if (exception.name) {
+        attributes[SemanticAttributes.EXCEPTION_TYPE] = exception.name;
+      }
+      if (exception.message) {
+        attributes[SemanticAttributes.EXCEPTION_MESSAGE] = exception.message;
+      }
+      if (exception.stack) {
+        attributes[SemanticAttributes.EXCEPTION_STACKTRACE] = exception.stack;
+      }
+    }
+
+    // these are minimum requirements from spec
+    if (
+      attributes[SemanticAttributes.EXCEPTION_TYPE] ||
+      attributes[SemanticAttributes.EXCEPTION_MESSAGE]
+    ) {
+      this.addEvent(ExceptionEventName, attributes as api.SpanAttributes, time);
+    } else {
+      api.diag.warn(`Failed to record an exception ${exception}`);
+    }
   }
 
-  get duration(): types.HrTime {
+  get duration(): api.HrTime {
     return this._duration;
+  }
+
+  get ended(): boolean {
+    return this._ended;
   }
 
   private _isSpanEnded(): boolean {
     if (this._ended) {
-      this._logger.warn(
+      api.diag.warn(
         'Can not execute the operation on ended Span {traceId: %s, spanId: %s}',
-        this.spanContext.traceId,
-        this.spanContext.spanId
+        this._spanContext.traceId,
+        this._spanContext.spanId
       );
     }
     return this._ended;

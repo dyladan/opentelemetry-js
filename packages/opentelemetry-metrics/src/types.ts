@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,54 +14,33 @@
  * limitations under the License.
  */
 
-import { LogLevel } from '@opentelemetry/core';
-import { Logger } from '@opentelemetry/types';
-
-/** Options needed for SDK metric creation. */
-export interface MetricOptions {
-  /** The name of the component that reports the Metric. */
-  component?: string;
-
-  /** The description of the Metric. */
-  description: string;
-
-  /** The unit of the Metric values. */
-  unit: string;
-
-  /** The list of label keys for the Metric. */
-  labelKeys: string[];
-
-  /** The map of constant labels for the Metric. */
-  constantLabels?: Map<string, string>;
-
-  /** Indicates the metric is a verbose metric that is disabled by default */
-  disabled: boolean;
-
-  /** Monotonic allows this metric to accept negative values. */
-  monotonic: boolean;
-
-  /** User provided logger. */
-  logger: Logger;
-}
+import * as api from '@opentelemetry/api-metrics';
+import { Resource } from '@opentelemetry/resources';
+import { Processor } from './export/Processor';
+import { MetricExporter } from './export/types';
 
 /** MeterConfig provides an interface for configuring a Meter. */
 export interface MeterConfig {
-  /** User provided logger. */
-  logger?: Logger;
+  /** Metric exporter. */
+  exporter?: MetricExporter;
 
-  /** level of logger.  */
-  logLevel?: LogLevel;
+  /** Metric collect interval */
+  interval?: number;
+
+  /** Resource associated with metric telemetry */
+  resource?: Resource;
+
+  /** Metric Processor. */
+  processor?: Processor;
 }
 
 /** Default Meter configuration. */
-export const DEFAULT_CONFIG = {
-  logLevel: LogLevel.DEBUG,
-};
+export const DEFAULT_CONFIG = {};
 
 /** The default metric creation options value. */
 export const DEFAULT_METRIC_OPTIONS = {
   disabled: false,
   description: '',
   unit: '1',
-  labelKeys: [],
+  valueType: api.ValueType.DOUBLE,
 };

@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,99 +13,110 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import * as types from '@opentelemetry/types';
-import { hashLabelValues } from './Utils';
-import { CounterHandle, GaugeHandle } from './Handle';
-import { MetricOptions } from './types';
+import * as api from '@opentelemetry/api-metrics';
+import { InstrumentationLibrary } from '@opentelemetry/core';
+import { Resource } from '@opentelemetry/resources';
+import { BaseBoundInstrument } from './BoundInstrument';
+import { MetricDescriptor, MetricKind, MetricRecord } from './export/types';
+import { hashLabels } from './Utils';
 
 /** This is a SDK implementation of {@link Metric} interface. */
-export abstract class Metric<T> implements types.Metric<T> {
-  protected readonly _monotonic: boolean;
+export abstract class Metric<T extends BaseBoundInstrument>
+  implements api.UnboundMetric<T> {
   protected readonly _disabled: boolean;
-  protected readonly _logger: types.Logger;
-  private readonly _handles: Map<String, T> = new Map();
+  protected readonly _valueType: api.ValueType;
+  protected readonly _descriptor: MetricDescriptor;
+  protected readonly _boundaries: number[] | undefined;
+  protected readonly _aggregationTemporality: api.AggregationTemporality;
+  private readonly _instruments: Map<string, T> = new Map();
 
-  constructor(name: string, options: MetricOptions) {
-    this._monotonic = options.monotonic;
-    this._disabled = options.disabled;
-    this._logger = options.logger;
+  constructor(
+    private readonly _name: string,
+    private readonly _options: api.MetricOptions,
+    private readonly _kind: MetricKind,
+    readonly resource: Resource,
+    readonly instrumentationLibrary: InstrumentationLibrary
+  ) {
+    this._disabled = !!_options.disabled;
+    this._valueType =
+      typeof _options.valueType === 'number'
+        ? _options.valueType
+        : api.ValueType.DOUBLE;
+    this._boundaries = _options.boundaries;
+    this._descriptor = this._getMetricDescriptor();
+    this._aggregationTemporality =
+      _options.aggregationTemporality === undefined
+        ? api.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE
+        : _options.aggregationTemporality;
   }
 
   /**
-   * Returns a Handle associated with specified label values.
-   * It is recommended to keep a reference to the Handle instead of always
+   * Returns an Instrument associated with specified Labels.
+   * It is recommended to keep a reference to the Instrument instead of always
    * calling this method for each operation.
-   * @param labelValues the list of label values.
+   * @param labels key-values pairs that are associated with a specific metric
+   *     that you want to record.
    */
-  getHandle(labelValues: string[]): T {
-    const hash = hashLabelValues(labelValues);
-    if (this._handles.has(hash)) return this._handles.get(hash)!;
+  bind(labels: api.Labels): T {
+    const hash = hashLabels(labels);
+    if (this._instruments.has(hash)) return this._instruments.get(hash)!;
 
-    const handle = this._makeHandle(labelValues);
-    this._handles.set(hash, handle);
-    return handle;
+    const instrument = this._makeInstrument(labels);
+    this._instruments.set(hash, instrument);
+    return instrument;
   }
 
   /**
-   * Returns a Handle for a metric with all labels not set.
+   * Removes the Instrument from the metric, if it is present.
+   * @param labels key-values pairs that are associated with a specific metric.
    */
-  getDefaultHandle(): T {
-    // @todo: implement this method
-    this._logger.error('not implemented yet');
-    throw new Error('not implemented yet');
+  unbind(labels: api.Labels): void {
+    this._instruments.delete(hashLabels(labels));
   }
 
   /**
-   * Removes the Handle from the metric, if it is present.
-   * @param labelValues the list of label values.
-   */
-  removeHandle(labelValues: string[]): void {
-    this._handles.delete(hashLabelValues(labelValues));
-  }
-
-  /**
-   * Clears all Handles from the Metric.
+   * Clears all Instruments from the Metric.
    */
   clear(): void {
-    this._handles.clear();
+    this._instruments.clear();
   }
 
-  setCallback(fn: () => void): void {
-    // @todo: implement this method
-    this._logger.error('not implemented yet');
-    return;
+  /**
+   * Returns kind of metric
+   */
+  getKind(): MetricKind {
+    return this._kind;
   }
 
-  protected abstract _makeHandle(labelValues: string[]): T;
-}
+  getAggregationTemporality() {
+    return this._aggregationTemporality;
+  }
 
-/** This is a SDK implementation of Counter Metric. */
-export class CounterMetric extends Metric<CounterHandle> {
-  constructor(name: string, options: MetricOptions) {
-    super(name, options);
+  getMetricRecord(): Promise<MetricRecord[]> {
+    return new Promise(resolve => {
+      resolve(
+        Array.from(this._instruments.values()).map(instrument => ({
+          descriptor: this._descriptor,
+          labels: instrument.getLabels(),
+          aggregator: instrument.getAggregator(),
+          aggregationTemporality: this.getAggregationTemporality(),
+          resource: this.resource,
+          instrumentationLibrary: this.instrumentationLibrary,
+        }))
+      );
+    });
   }
-  protected _makeHandle(labelValues: string[]): CounterHandle {
-    return new CounterHandle(
-      this._disabled,
-      this._monotonic,
-      labelValues,
-      this._logger
-    );
-  }
-}
 
-/** This is a SDK implementation of Gauge Metric. */
-export class GaugeMetric extends Metric<GaugeHandle> {
-  constructor(name: string, options: MetricOptions) {
-    super(name, options);
+  private _getMetricDescriptor(): MetricDescriptor {
+    return {
+      name: this._name,
+      description: this._options.description || '',
+      unit: this._options.unit || '1',
+      metricKind: this._kind,
+      valueType: this._valueType,
+      ...(this._boundaries && { boundaries: this._boundaries }),
+    };
   }
-  protected _makeHandle(labelValues: string[]): GaugeHandle {
-    return new GaugeHandle(
-      this._disabled,
-      this._monotonic,
-      labelValues,
-      this._logger
-    );
-  }
+
+  protected abstract _makeInstrument(labels: api.Labels): T;
 }

@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,72 +14,85 @@
  * limitations under the License.
  */
 
-import { ScopeManager } from '@opentelemetry/scope-base';
-import {
-  Attributes,
-  BinaryFormat,
-  HttpTextFormat,
-  Logger,
-  Sampler,
-} from '@opentelemetry/types';
-import { LogLevel } from '@opentelemetry/core';
+import { TextMapPropagator, Sampler } from '@opentelemetry/api';
+import { IdGenerator } from '@opentelemetry/core';
+
+import { ContextManager } from '@opentelemetry/api';
+import { Resource } from '@opentelemetry/resources';
 
 /**
- * BasicTracerConfig provides an interface for configuring a Basic Tracer.
+ * TracerConfig provides an interface for configuring a Basic Tracer.
  */
-export interface BasicTracerConfig {
-  /**
-   * Binary formatter which can serialize/deserialize Spans.
-   */
-  binaryFormat?: BinaryFormat;
-
-  /**
-   * Attributed that will be applied on every span created by Tracer.
-   * Useful to add infrastructure and environment information to your spans.
-   */
-  defaultAttributes?: Attributes;
-
-  /**
-   * HTTP text formatter which can inject/extract Spans.
-   */
-  httpTextFormat?: HttpTextFormat;
-
-  /**
-   * User provided logger.
-   */
-  logger?: Logger;
-
-  /** level of logger.  */
-  logLevel?: LogLevel;
-
+export interface TracerConfig {
   /**
    * Sampler determines if a span should be recorded or should be a NoopSpan.
    */
   sampler?: Sampler;
 
-  /**
-   * Scope manager keeps context across in-process operations.
-   */
-  scopeManager?: ScopeManager;
+  /** Span Limits */
+  spanLimits?: SpanLimits;
 
-  /** Trace Parameters */
-  traceParams?: TraceParams;
+  /** Resource associated with trace telemetry  */
+  resource?: Resource;
+
+  /**
+   * Generator of trace and span IDs
+   * The default idGenerator generates random ids
+   */
+  idGenerator?: IdGenerator;
+
+  /**
+   * How long the forceFlush can run before it is cancelled.
+   * The default value is 30000ms
+   */
+  forceFlushTimeoutMillis?: number;
+}
+
+/**
+ * Configuration options for registering the API with the SDK.
+ * Undefined values may be substituted for defaults, and null
+ * values will not be registered.
+ */
+export interface SDKRegistrationConfig {
+  /** Propagator to register as the global propagator */
+  propagator?: TextMapPropagator | null;
+
+  /** Context manager to register as the global context manager */
+  contextManager?: ContextManager | null;
 }
 
 /** Global configuration of trace service */
-export interface TraceParams {
-  /** numberOfAttributesPerSpan is number of attributes per span */
-  numberOfAttributesPerSpan?: number;
-  /** numberOfLinksPerSpan is number of links per span */
-  numberOfLinksPerSpan?: number;
-  /** numberOfEventsPerSpan is number of message events per span */
-  numberOfEventsPerSpan?: number;
+export interface SpanLimits {
+  /** attributeCountLimit is number of attributes per span */
+  attributeCountLimit?: number;
+  /** linkCountLimit is number of links per span */
+  linkCountLimit?: number;
+  /** eventCountLimit is number of message events per span */
+  eventCountLimit?: number;
 }
 
 /** Interface configuration for a buffer. */
 export interface BufferConfig {
-  /** Maximum size of a buffer. */
-  bufferSize?: number;
-  /** Max time for a buffer can wait before being sent */
-  bufferTimeout?: number;
+  /** The maximum batch size of every export. It must be smaller or equal to
+   * maxQueueSize. The default value is 512. */
+  maxExportBatchSize?: number;
+
+  /** The delay interval in milliseconds between two consecutive exports.
+   *  The default value is 5000ms. */
+  scheduledDelayMillis?: number;
+
+  /** How long the export can run before it is cancelled.
+   * The default value is 30000ms */
+  exportTimeoutMillis?: number;
+
+  /** The maximum queue size. After the size is reached spans are dropped.
+   * The default value is 2048. */
+  maxQueueSize?: number;
+}
+
+/** Interface configuration for BatchSpanProcessor on browser */
+export interface BatchSpanProcessorBrowserConfig extends BufferConfig {
+  /** Disable flush when a user navigates to a new page, closes the tab or the browser, or,
+   * on mobile, switches to a different app. Auto flush is enabled by default. */
+  disableAutoFlushOnDocumentHide?: boolean;
 }
